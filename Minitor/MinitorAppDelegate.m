@@ -24,7 +24,7 @@
 
 - (void)setupStatusBar {
     _statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
-    _statusItem.title = @"0.00 KH/s";
+    [self __setStatusText:@"Loading..."];
     _statusItem.highlightMode = YES;
     
     _statusItem.menu = [self defaultMenu];
@@ -33,7 +33,12 @@
 - (NSMenu *)defaultMenu {
     NSMenu *menu = [[NSMenu alloc] init];
     
-    [menu addItemWithTitle:@"Payout: 0.00" action:nil keyEquivalent:@""];
+    [menu addItemWithTitle:@"Block: -" action:nil keyEquivalent:@""];
+    [menu addItemWithTitle:@"Payout: -" action:nil keyEquivalent:@""];
+    [menu addItemWithTitle:@"Progress: -" action:nil keyEquivalent:@""];
+    [menu addItemWithTitle:@"Difficulty: -" action:nil keyEquivalent:@""];
+    [menu addItemWithTitle:@"Next Difficulty: -" action:nil keyEquivalent:@""];
+    [menu addItemWithTitle:@"Valid:- Invalid:-" action:nil keyEquivalent:@""];
     [menu addItem:[NSMenuItem separatorItem]];
     [menu addItemWithTitle:@"Preferences..." action:@selector(openSettings:) keyEquivalent:@""];
     [menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
@@ -93,16 +98,33 @@
             NSDictionary *jsonResponse = (NSDictionary *)responseObject;
             
             NSDictionary *personalData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.personal"];
+            NSDictionary *poolData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.pool"];
+            NSDictionary *networkData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.network"];
             
             if (personalData) {
                 NSString *currencyString = [jsonResponse valueForKeyPath:@"getdashboarddata.data.pool.info.currency"];
-                _statusItem.title = [NSString stringWithFormat:@"%@ KH/s", [personalData valueForKey:@"hashrate"]];
-                [[_statusItem.menu itemAtIndex:0] setTitle:[NSString stringWithFormat:@"Payout: %@%@", [personalData valueForKeyPath:@"estimates.payout"], (currencyString ? [NSString stringWithFormat:@" %@", currencyString] : nil)]];
+                [self __setStatusText:[NSString stringWithFormat:@"%@ KH/s", [personalData valueForKey:@"hashrate"]]];
+                
+                [[_statusItem.menu itemAtIndex:0] setTitle:[NSString stringWithFormat:@"Block: %@", [networkData valueForKeyPath:@"block"]]];
+                [[_statusItem.menu itemAtIndex:1] setTitle:[NSString stringWithFormat:@"Payout: %1.1lf%@", [[personalData valueForKeyPath:@"estimates.payout"] floatValue], (currencyString ? [NSString stringWithFormat:@" %@", currencyString] : nil)]];
+                [[_statusItem.menu itemAtIndex:2] setTitle:[NSString stringWithFormat:@"Progress: %1.1lf%%", [[poolData valueForKeyPath:@"shares.progress"] floatValue]]];
+                [[_statusItem.menu itemAtIndex:3] setTitle:[NSString stringWithFormat:@"Difficulty: %1.0lf", [[networkData valueForKeyPath:@"difficulty"] floatValue]]];
+                [[_statusItem.menu itemAtIndex:4] setTitle:[NSString stringWithFormat:@"Next Difficulty: %1.0lf", [[networkData valueForKeyPath:@"nextdifficulty"] floatValue]]];
+                [[_statusItem.menu itemAtIndex:5] setTitle:[NSString stringWithFormat:@"Valid: %@, Invalid: %@", [personalData valueForKeyPath:@"shares.valid"], [personalData valueForKeyPath:@"shares.invalid"]]];
             }
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
             NSLog(@"Error: %@", error);
         }];
     }
+}
+
+- (void)__setStatusText:(NSString *)text{
+    NSDictionary *fontAttributes = @{
+                                     NSFontAttributeName : [NSFont systemFontOfSize:13]
+                       };
+    
+    NSAttributedString *attrString = [[NSAttributedString alloc] initWithString:text attributes:fontAttributes];
+    [_statusItem setAttributedTitle:attrString];
 }
 
 #pragma mark -
