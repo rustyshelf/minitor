@@ -106,16 +106,13 @@
 		53B7CC3718996E9600B600E5 /* Minitor */ = {
 			isa = PBXGroup;
 			children = (
-				53B7CC7D189989BC00B600E5 /* HyperlinkTextField.h */,
-				53B7CC7E189989BC00B600E5 /* HyperlinkTextField.m */,
-				53B7CC4918996E9600B600E5 /* Images.xcassets */,
-				53B7CC4618996E9600B600E5 /* MainMenu.xib */,
+				BDE230E318A38AA4007462A3 /* Utils */,
+				53B7CC6F18997EF100B600E5 /* Preferences */,
+				BDE230E418A38ACF007462A3 /* User Interface */,
 				53B7CC4318996E9600B600E5 /* MinitorAppDelegate.h */,
 				53B7CC4418996E9600B600E5 /* MinitorAppDelegate.m */,
-				53B7CC6F18997EF100B600E5 /* Preferences */,
+				53B7CC4918996E9600B600E5 /* Images.xcassets */,
 				53B7CC3818996E9600B600E5 /* Supporting Files */,
-				53B7CC751899836200B600E5 /* MinitorApplication.h */,
-				53B7CC761899836200B600E5 /* MinitorApplication.m */,
 			);
 			path = Minitor;
 			sourceTree = "<group>";
@@ -143,6 +140,25 @@
 				53B7CC791899844000B600E5 /* MinitorAboutPreferencesViewController.m */,
 			);
 			path = Preferences;
+			sourceTree = "<group>";
+		};
+		BDE230E318A38AA4007462A3 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				53B7CC7D189989BC00B600E5 /* HyperlinkTextField.h */,
+				53B7CC7E189989BC00B600E5 /* HyperlinkTextField.m */,
+			);
+			name = Utils;
+			sourceTree = "<group>";
+		};
+		BDE230E418A38ACF007462A3 /* User Interface */ = {
+			isa = PBXGroup;
+			children = (
+				53B7CC4618996E9600B600E5 /* MainMenu.xib */,
+				53B7CC751899836200B600E5 /* MinitorApplication.h */,
+				53B7CC761899836200B600E5 /* MinitorApplication.m */,
+			);
+			name = "User Interface";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

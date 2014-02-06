@@ -13,9 +13,19 @@
 
 #import "MinitorAppDelegate.h"
 
+@interface MinitorAppDelegate(){
+    NSString *actionProtocol;
+}
+@end
+
 @implementation MinitorAppDelegate
 
+static NSString *kActionProtocolUserStatus = @"getuserstatus";
+static NSString *kActionProtocolDashboardData = @"getdashboarddata";
+
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+    actionProtocol = kActionProtocolDashboardData;
+    
     [self setupStatusBar];
     
     [NSTimer scheduledTimerWithTimeInterval:30 target:self selector:@selector(refreshStats) userInfo:nil repeats:YES];
@@ -33,15 +43,24 @@
 - (NSMenu *)defaultMenu {
     NSMenu *menu = [[NSMenu alloc] init];
     
-    [menu addItemWithTitle:@"Block: -" action:nil keyEquivalent:@""];
-    [menu addItemWithTitle:@"Payout: -" action:nil keyEquivalent:@""];
-    [menu addItemWithTitle:@"Progress: -" action:nil keyEquivalent:@""];
-    [menu addItemWithTitle:@"Difficulty: -" action:nil keyEquivalent:@""];
-    [menu addItemWithTitle:@"Next Difficulty: -" action:nil keyEquivalent:@""];
-    [menu addItemWithTitle:@"Valid:- Invalid:-" action:nil keyEquivalent:@""];
-    [menu addItem:[NSMenuItem separatorItem]];
-    [menu addItemWithTitle:@"Preferences..." action:@selector(openSettings:) keyEquivalent:@""];
-    [menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
+    if ([actionProtocol isEqualToString:@"getuserstatus"]){
+        [menu addItemWithTitle:@"Share Rate: -" action:nil keyEquivalent:@""];
+        [menu addItemWithTitle:@"Valid:- Invalid:-" action:nil keyEquivalent:@""];
+        [menu addItem:[NSMenuItem separatorItem]];
+        [menu addItemWithTitle:@"Preferences..." action:@selector(openSettings:) keyEquivalent:@""];
+        [menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
+    }
+    else if ([actionProtocol isEqualToString:@"getdashboarddata"]){
+        [menu addItemWithTitle:@"Block: -" action:nil keyEquivalent:@""];
+        [menu addItemWithTitle:@"Payout: -" action:nil keyEquivalent:@""];
+        [menu addItemWithTitle:@"Progress: -" action:nil keyEquivalent:@""];
+        [menu addItemWithTitle:@"Difficulty: -" action:nil keyEquivalent:@""];
+        [menu addItemWithTitle:@"Next Difficulty: -" action:nil keyEquivalent:@""];
+        [menu addItemWithTitle:@"Valid:- Invalid:-" action:nil keyEquivalent:@""];
+        [menu addItem:[NSMenuItem separatorItem]];
+        [menu addItemWithTitle:@"Preferences..." action:@selector(openSettings:) keyEquivalent:@""];
+        [menu addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];
+    }
     
     return menu;
 }
@@ -75,7 +94,7 @@
     
     if (apiURL && apiKey && userID) {
         NSDictionary *params = @{ @"page": @"api",
-                                  @"action": @"getdashboarddata",
+                                  @"action": actionProtocol,
                                   @"api_key": apiKey,
                                   @"id": userID};
         
@@ -97,21 +116,45 @@
         [manager GET:apiURL parameters:params success:^(AFHTTPRequestOperation *operation, id responseObject) {
             NSDictionary *jsonResponse = (NSDictionary *)responseObject;
             
-            NSDictionary *personalData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.personal"];
-            NSDictionary *poolData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.pool"];
-            NSDictionary *networkData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.network"];
-            
-            if (personalData) {
-                NSString *currencyString = [jsonResponse valueForKeyPath:@"getdashboarddata.data.pool.info.currency"];
-                [self __setStatusText:[NSString stringWithFormat:@"%@ KH/s", [personalData valueForKey:@"hashrate"]]];
+            if ([actionProtocol isEqualToString:@"getuserstatus"]){
+                NSDictionary *mainData = [jsonResponse valueForKeyPath:@"getuserstatus.data"];
                 
-                [[_statusItem.menu itemAtIndex:0] setTitle:[NSString stringWithFormat:@"Block: %@", [networkData valueForKeyPath:@"block"]]];
-                [[_statusItem.menu itemAtIndex:1] setTitle:[NSString stringWithFormat:@"Payout: %1.1lf%@", [[personalData valueForKeyPath:@"estimates.payout"] floatValue], (currencyString ? [NSString stringWithFormat:@" %@", currencyString] : nil)]];
-                [[_statusItem.menu itemAtIndex:2] setTitle:[NSString stringWithFormat:@"Progress: %1.1lf%%", [[poolData valueForKeyPath:@"shares.progress"] floatValue]]];
-                [[_statusItem.menu itemAtIndex:3] setTitle:[NSString stringWithFormat:@"Difficulty: %1.0lf", [[networkData valueForKeyPath:@"difficulty"] floatValue]]];
-                [[_statusItem.menu itemAtIndex:4] setTitle:[NSString stringWithFormat:@"Next Difficulty: %1.0lf", [[networkData valueForKeyPath:@"nextdifficulty"] floatValue]]];
-                [[_statusItem.menu itemAtIndex:5] setTitle:[NSString stringWithFormat:@"Valid: %@, Invalid: %@", [personalData valueForKeyPath:@"shares.valid"], [personalData valueForKeyPath:@"shares.invalid"]]];
+                if (mainData) {
+                    [self __setStatusText:[NSString stringWithFormat:@"%1.0lf KH/s", [[mainData valueForKey:@"hashrate"] doubleValue]]];
+                    
+                    [[_statusItem.menu itemAtIndex:0] setTitle:[NSString stringWithFormat:@"Share Rate: %@", [mainData valueForKeyPath:@"sharerate"]]];
+                    [[_statusItem.menu itemAtIndex:1] setTitle:[NSString stringWithFormat:@"Valid: %@, Invalid: %@", [mainData valueForKeyPath:@"shares.valid"], [mainData valueForKeyPath:@"shares.invalid"]]];
+                }
+                else {
+                    actionProtocol = kActionProtocolDashboardData;
+                    [self setupStatusBar];
+                    [self refreshStats];
+                }
             }
+            else if ([actionProtocol isEqualToString:@"getdashboarddata"]) {
+                NSDictionary *personalData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.personal"];
+                NSDictionary *poolData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.pool"];
+                NSDictionary *networkData = [jsonResponse valueForKeyPath:@"getdashboarddata.data.network"];
+                
+                if (personalData) {
+                    NSString *currencyString = [jsonResponse valueForKeyPath:@"getdashboarddata.data.pool.info.currency"];
+                    [self __setStatusText:[NSString stringWithFormat:@"%1.0lf KH/s", [[personalData valueForKey:@"hashrate"] doubleValue]]];
+                    
+                    [[_statusItem.menu itemAtIndex:0] setTitle:[NSString stringWithFormat:@"Block: %@", [networkData valueForKeyPath:@"block"]]];
+                    [[_statusItem.menu itemAtIndex:1] setTitle:[NSString stringWithFormat:@"Payout: %1.1lf%@", [[personalData valueForKeyPath:@"estimates.payout"] floatValue], (currencyString ? [NSString stringWithFormat:@" %@", currencyString] : nil)]];
+                    [[_statusItem.menu itemAtIndex:2] setTitle:[NSString stringWithFormat:@"Progress: %1.1lf%%", [[poolData valueForKeyPath:@"shares.progress"] floatValue]]];
+                    [[_statusItem.menu itemAtIndex:3] setTitle:[NSString stringWithFormat:@"Difficulty: %1.0lf", [[networkData valueForKeyPath:@"difficulty"] floatValue]]];
+                    [[_statusItem.menu itemAtIndex:4] setTitle:[NSString stringWithFormat:@"Next Difficulty: %1.0lf", [[networkData valueForKeyPath:@"nextdifficulty"] floatValue]]];
+                    [[_statusItem.menu itemAtIndex:5] setTitle:[NSString stringWithFormat:@"Valid: %@, Invalid: %@", [personalData valueForKeyPath:@"shares.valid"], [personalData valueForKeyPath:@"shares.invalid"]]];
+                }
+                else {
+                    actionProtocol = kActionProtocolUserStatus;
+                    [self setupStatusBar];
+                    [self refreshStats];
+                }
+            }
+            
+            
         } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
             NSLog(@"Error: %@", error);
         }];
